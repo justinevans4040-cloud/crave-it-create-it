@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "buildCommand": "node scripts/vercel-build.mjs",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/health", "destination": "/api" },
+    { "source": "/api/(.*)", "destination": "/api" }
+  ],
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "data/seed.json",
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    }
+  ]
+}

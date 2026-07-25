@@ -1,6 +1,7 @@
 node_modules/
 .expo/
 dist/
+public/
 .env
 .env.local
 .DS_Store
@@ -8,4 +9,7 @@ dist/
 data/runtime.json
 .cursor/
 .vscode/
+.vercel/
 *.tmp
+
+.vercel

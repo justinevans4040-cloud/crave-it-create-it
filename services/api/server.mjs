@@ -5,13 +5,16 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const statePath = path.resolve(here, '../../data/runtime.json');
+const statePath = process.env.VERCEL
+  ? path.join('/tmp', 'crave-runtime.json')
+  : path.resolve(here, '../../data/runtime.json');
 const seedPath = path.resolve(here, '../../data/seed.json');
 const port = Number(process.env.API_PORT || 8788);
 const host = process.env.API_HOST || '127.0.0.1';
 const OPS_TOKEN = process.env.OPS_TOKEN || 'crave-local-ops';
+const OPS_ALLOW_REMOTE = process.env.OPS_ALLOW_REMOTE === '1' || Boolean(process.env.VERCEL);
 const ALLOWED_ORIGINS = new Set(
-  String(process.env.CORS_ORIGINS || 'http://localhost:4173,http://127.0.0.1:4173')
+  String(process.env.CORS_ORIGINS || 'http://localhost:4173,http://127.0.0.1:4173,*')
     .split(',')
     .map(value => value.trim())
     .filter(Boolean)
@@ -56,6 +59,7 @@ async function persist(state) {
 function corsOrigin(req) {
   const origin = req.headers.origin;
   if (!origin) return null;
+  if (ALLOWED_ORIGINS.has('*')) return origin;
   return ALLOWED_ORIGINS.has(origin) ? origin : null;
 }
 
@@ -490,7 +494,7 @@ export async function handleRequest(req, res) {
 
     if (url.pathname.startsWith('/api/ops/')) {
       if (!requireOps(req, res)) return;
-      if (!isLocalSocket(req) && process.env.OPS_ALLOW_REMOTE !== '1') {
+      if (!isLocalSocket(req) && !OPS_ALLOW_REMOTE) {
         return send(res, 403, { error: 'OPS_LOCAL_ONLY' }, req);
       }
     }
