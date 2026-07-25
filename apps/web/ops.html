@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8E1C1C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <title>Ops · Crave It, I Create It</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+    .ops-wrap { padding: 18px 0 60px; }
+    .ops-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    .ops-card { background: white; border: 1px solid var(--line); border-radius: 22px; padding: 16px; display: grid; gap: 10px; }
+    .ops-card h3 { margin: 0; font-family: var(--display); }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .tiny { font-size: 0.82rem; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .site-header { margin-bottom: 8px; }
+    @media (min-width: 900px) { .ops-grid { grid-template-columns: 1.1fr 0.9fr; } }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <img src="assets/logo-mark.svg" alt="" width="40" height="40" />
+      <span class="brand-text"><strong>Crave It</strong><small>Operator board</small></span>
+    </a>
+    <div class="header-actions">
+      <a class="ghost-btn" href="driver.html">Driver</a>
+      <button class="ghost-btn" id="refresh" type="button">Refresh</button>
+      <button class="cart-btn" id="reset" type="button">Reset demo</button>
+    </div>
+  </header>
+
+  <main class="shell ops-wrap">
+    <p class="eyebrow">Demo ops · no login required locally</p>
+    <h1 style="font-family:var(--display);letter-spacing:-0.04em;margin:0 0 18px;font-size:clamp(2rem,5vw,3rem);">Route · stock · orders</h1>
+    <div class="ops-grid">
+      <section class="ops-card">
+        <h3>Vehicles</h3>
+        <div id="vehicles"></div>
+      </section>
+      <section class="ops-card">
+        <h3>Open orders</h3>
+        <div id="orders"></div>
+      </section>
+      <section class="ops-card">
+        <h3>Kitchen stock moves</h3>
+        <div class="row">
+          <select id="from-vehicle"></select>
+          <select id="product"></select>
+          <input id="qty" type="number" min="1" value="5" style="width:72px;border:1px solid var(--line);border-radius:12px;padding:8px;" />
+          <button class="btn btn-chile" id="assign" type="button">Assign +</button>
+          <button class="btn btn-gold" id="soldout" type="button">Sold out</button>
+        </div>
+        <p class="tiny">Assign adds stock to a truck. Sold out zeroes that product on the truck.</p>
+        <div id="low"></div>
+      </section>
+      <section class="ops-card">
+        <h3>Concept Lab inbox</h3>
+        <div id="concepts"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script type="module">
+    const API = (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://127.0.0.1:8788' : '');
+    const OPS_TOKEN = localStorage.getItem('crave.opsToken') || 'crave-local-ops';
+    const opsHeaders = { 'content-type': 'application/json', 'x-ops-token': OPS_TOKEN };
+    const toast = (msg) => {
+      const el = document.querySelector('#toast');
+      el.textContent = msg; el.classList.add('show');
+      clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2400);
+    };
+
+    let board = null;
+
+    async function load() {
+      const res = await fetch(`${API}/api/ops/board`, { headers: { 'x-ops-token': OPS_TOKEN } });
+      if (!res.ok) throw new Error('Ops unauthorized — set localStorage crave.opsToken');
+      board = await res.json();
+      render();
+    }
+
+    function render() {
+      document.querySelector('#vehicles').innerHTML = board.vehicles.map(v => `
+        <article style="border-top:1px solid var(--line);padding:10px 0;">
+          <div class="row" style="justify-content:space-between;">
+            <strong>${v.name}</strong>
+            <span class="status ${v.status.toLowerCase()}">${v.status}</span>
+          </div>
+          <div class="tiny">${v.zone} · ${v.locationLabel} · ${v.totalLeft} items</div>
+          <div class="row" style="margin-top:8px;">
+            <button data-status="${v.id}" data-value="ACTIVE">Start route</button>
+            <button data-status="${v.id}" data-value="RESTOCKING">Restock</button>
+            <button data-status="${v.id}" data-value="OFFLINE">End / hide</button>
+          </div>
+        </article>`).join('');
+
+      document.querySelector('#orders').innerHTML = board.orders.length ? `
+        <table><thead><tr><th>Order</th><th>Truck</th><th>Status</th><th></th></tr></thead>
+        <tbody>${board.orders.map(o => `
+          <tr>
+            <td>${o.id}<div class="tiny">${o.customerName} · ${o.fulfillment}</div></td>
+            <td>${o.vehicleName}</td>
+            <td>${o.status}</td>
+            <td><button data-advance="${o.id}">Advance</button></td>
+          </tr>`).join('')}</tbody></table>` : '<p class="tiny">No orders yet.</p>';
+
+      document.querySelector('#from-vehicle').innerHTML = board.vehicles.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+      const products = [...new Set(board.vehicles.flatMap(v => v.stock.map(s => s.productId)))];
+      // fallback product list from stock names
+      const productOptions = [];
+      for (const v of board.vehicles) for (const s of v.stock) {
+        if (!productOptions.find(p => p.id === s.productId)) productOptions.push({ id: s.productId, name: s.productName });
+      }
+      document.querySelector('#product').innerHTML = productOptions.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+      document.querySelector('#low').innerHTML = board.lowStock.length
+        ? `<p class="tiny"><strong>Low stock:</strong> ${board.lowStock.map(s => `${s.productId} on ${s.vehicleId} (${s.quantity})`).join(' · ')}</p>`
+        : '<p class="tiny">No low-stock alerts.</p>';
+
+      document.querySelector('#concepts').innerHTML = board.concepts.length
+        ? board.concepts.map(c => `<article style="padding:8px 0;border-top:1px solid var(--line);"><strong>${c.name}</strong><div class="tiny">${c.contact}</div><p>${c.idea}</p></article>`).join('')
+        : '<p class="tiny">No concepts yet.</p>';
+    }
+
+    const FLOW = ['PENDING','ACCEPTED','PREPARING','READY','EN_ROUTE','COMPLETED'];
+
+    document.addEventListener('click', async (event) => {
+      const statusBtn = event.target.closest('[data-status]');
+      if (statusBtn) {
+        await fetch(`${API}/api/ops/vehicles/${statusBtn.dataset.status}`, {
+          method: 'PATCH', headers: opsHeaders,
+          body: JSON.stringify({ status: statusBtn.dataset.value })
+        });
+        toast('Vehicle updated'); await load();
+      }
+      const adv = event.target.closest('[data-advance]');
+      if (adv) {
+        const order = board.orders.find(o => o.id === adv.dataset.advance);
+        const idx = FLOW.indexOf(order.status);
+        const next = FLOW[Math.min(FLOW.length - 1, idx + 1)];
+        await fetch(`${API}/api/ops/orders/${order.id}`, {
+          method: 'PATCH', headers: opsHeaders,
+          body: JSON.stringify({ status: next })
+        });
+        toast(`Order → ${next}`); await load();
+      }
+    });
+
+    document.querySelector('#assign').addEventListener('click', async () => {
+      await fetch(`${API}/api/ops/inventory/adjust`, {
+        method: 'POST', headers: opsHeaders,
+        body: JSON.stringify({
+          type: 'ASSIGN',
+          vehicleId: document.querySelector('#from-vehicle').value,
+          productId: document.querySelector('#product').value,
+          quantity: Number(document.querySelector('#qty').value)
+        })
+      });
+      toast('Stock assigned'); await load();
+    });
+
+    document.querySelector('#soldout').addEventListener('click', async () => {
+      await fetch(`${API}/api/ops/inventory/adjust`, {
+        method: 'POST', headers: opsHeaders,
+        body: JSON.stringify({
+          type: 'SOLD_OUT',
+          vehicleId: document.querySelector('#from-vehicle').value,
+          productId: document.querySelector('#product').value
+        })
+      });
+      toast('Marked sold out'); await load();
+    });
+
+    document.querySelector('#refresh').addEventListener('click', load);
+    document.querySelector('#reset').addEventListener('click', async () => {
+      await fetch(`${API}/api/ops/reset-demo`, { method: 'POST', headers: { 'x-ops-token': OPS_TOKEN } });
+      toast('Demo reset'); await load();
+    });
+
+    load().catch((err) => toast(err.message || 'Start npm run dev first'));
+    setInterval(() => load().catch(() => {}), 10000);
+  </script>
+</body>
+</html>

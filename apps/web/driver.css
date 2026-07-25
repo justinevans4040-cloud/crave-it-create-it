@@ -1,0 +1,146 @@
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.driver-body {
+  padding-bottom: calc(24px + var(--safe-bottom));
+  background: linear-gradient(180deg, #fff8ee, #f6ebe0);
+}
+
+.driver-main {
+  padding: 18px 0 40px;
+  display: grid;
+  gap: 16px;
+}
+
+.driver-gate,
+.driver-board {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.driver-gate[hidden],
+.driver-board[hidden],
+.driver-panel[hidden] {
+  display: none !important;
+}
+
+.driver-gate h1,
+.driver-top h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.driver-gate label,
+.driver-panel label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.driver-gate input,
+.driver-gate select,
+.driver-panel input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fffdf9;
+}
+
+.driver-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.driver-top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.driver-map-shell {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  min-height: 220px;
+}
+
+.driver-map {
+  height: min(42vh, 280px);
+  width: 100%;
+}
+
+.driver-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.order-list,
+.stock-list {
+  display: grid;
+  gap: 10px;
+}
+
+.order-card,
+.stock-row {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--masa);
+  display: grid;
+  gap: 8px;
+}
+
+.order-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: start;
+}
+
+.order-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stock-row {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.empty-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .driver-map {
+    height: 320px;
+  }
+}

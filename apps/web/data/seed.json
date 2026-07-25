@@ -1,0 +1,115 @@
+{
+  "brand": {
+    "name": "Crave It, I Create It",
+    "tagline": "You crave it. We create it — one tamal at a time.",
+    "city": "Las Vegas",
+    "story": "Family recipes, mobile kitchens, and bold ideas made for the neighborhood."
+  },
+  "vehicles": [
+    {
+      "id": "truck-sunrise",
+      "name": "Sunrise Runner",
+      "status": "ACTIVE",
+      "zone": "South Side",
+      "locationLabel": "Warm Springs & Las Vegas Blvd",
+      "latitude": 36.0579,
+      "longitude": -115.1722,
+      "lastUpdated": "2026-07-23T08:20:00.000Z",
+      "etaMinutes": 12,
+      "deliveryRadiusMiles": 4.5
+    },
+    {
+      "id": "truck-valley",
+      "name": "Valley Cruiser",
+      "status": "ACTIVE",
+      "zone": "Central",
+      "locationLabel": "Sahara & Valley View",
+      "latitude": 36.1443,
+      "longitude": -115.1907,
+      "lastUpdated": "2026-07-23T08:18:00.000Z",
+      "etaMinutes": 18,
+      "deliveryRadiusMiles": 5
+    },
+    {
+      "id": "truck-family",
+      "name": "Family Kitchen",
+      "status": "RESTOCKING",
+      "zone": "West Side",
+      "locationLabel": "Restocking for the evening route",
+      "latitude": 36.1147,
+      "longitude": -115.2452,
+      "lastUpdated": "2026-07-23T08:02:00.000Z",
+      "etaMinutes": 35,
+      "deliveryRadiusMiles": 0
+    }
+  ],
+  "products": [
+    {
+      "id": "tamal-red-chile",
+      "name": "Red Chile Tamal",
+      "category": "CLASSIC",
+      "description": "A warm, savory family-style tamal built for the daily route.",
+      "priceCents": 450,
+      "dietary": [],
+      "image": "assets/tamal-red.svg"
+    },
+    {
+      "id": "tamal-green-chile",
+      "name": "Green Chile & Cheese",
+      "category": "CLASSIC",
+      "description": "Roasted green chile, melted cheese, and soft masa.",
+      "priceCents": 450,
+      "dietary": ["VEGETARIAN"],
+      "image": "assets/tamal-green.svg"
+    },
+    {
+      "id": "street-corn",
+      "name": "Street Corn Cup",
+      "category": "SIDE",
+      "description": "Creamy, bright, and made for a quick neighborhood stop.",
+      "priceCents": 600,
+      "dietary": ["VEGETARIAN"],
+      "image": "assets/street-corn.svg"
+    },
+    {
+      "id": "hot-cheetos-tamal",
+      "name": "Hot Cheetos Concept Tamal",
+      "category": "CONCEPT_LAB",
+      "description": "A bold custom-style creation from the Concept Lab.",
+      "priceCents": 650,
+      "dietary": [],
+      "image": "assets/concept-hot.svg"
+    },
+    {
+      "id": "fruity-pebbles-tamal",
+      "name": "Fruity Pebbles Dessert Tamal",
+      "category": "CONCEPT_LAB",
+      "description": "A sweet dessert tamal created for customers who want something different.",
+      "priceCents": 650,
+      "dietary": ["VEGETARIAN"],
+      "image": "assets/concept-sweet.svg"
+    },
+    {
+      "id": "captain-crunch-alfredo",
+      "name": "Crunch Chicken Alfredo Tamal",
+      "category": "CONCEPT_LAB",
+      "description": "A savory experimental tamal inspired by the original vendor concept.",
+      "priceCents": 750,
+      "dietary": [],
+      "image": "assets/concept-crunch.svg"
+    }
+  ],
+  "inventory": [
+    { "vehicleId": "truck-sunrise", "productId": "tamal-red-chile", "quantity": 28 },
+    { "vehicleId": "truck-sunrise", "productId": "tamal-green-chile", "quantity": 19 },
+    { "vehicleId": "truck-sunrise", "productId": "street-corn", "quantity": 16 },
+    { "vehicleId": "truck-sunrise", "productId": "hot-cheetos-tamal", "quantity": 8 },
+    { "vehicleId": "truck-valley", "productId": "tamal-red-chile", "quantity": 21 },
+    { "vehicleId": "truck-valley", "productId": "tamal-green-chile", "quantity": 14 },
+    { "vehicleId": "truck-valley", "productId": "street-corn", "quantity": 9 },
+    { "vehicleId": "truck-valley", "productId": "fruity-pebbles-tamal", "quantity": 7 },
+    { "vehicleId": "truck-family", "productId": "tamal-red-chile", "quantity": 0 },
+    { "vehicleId": "truck-family", "productId": "captain-crunch-alfredo", "quantity": 0 }
+  ],
+  "orders": []
+}

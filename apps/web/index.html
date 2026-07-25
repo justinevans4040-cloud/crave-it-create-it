@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8E1C1C" />
+  <meta name="description" content="Find the nearest tamale truck, see live stock, and order pickup or drop-off." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Crave It" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/logo-mark.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <link rel="stylesheet" href="styles.css?v=4" />
+  <title>Crave It, I Create It</title>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div id="install-banner" class="install-banner" hidden>
+    <p>Install Crave It on your phone for live trucks &amp; orders.</p>
+    <div class="install-actions">
+      <button type="button" class="btn btn-gold" id="install-btn">Install</button>
+      <button type="button" class="text-btn" id="install-dismiss">Not now</button>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Crave It home">
+      <img src="assets/logo-mark.svg" alt="" width="40" height="40" />
+      <span class="brand-text"><strong>Crave It</strong><small>I Create It</small></span>
+    </a>
+    <nav class="desktop-nav" aria-label="Main">
+      <a href="#map">Map</a>
+      <a href="#trucks">Trucks</a>
+      <a href="#menu">Menu</a>
+      <a href="#concept">Lab</a>
+      <a href="#catering">Catering</a>
+      <a href="driver.html">Driver</a>
+    </nav>
+    <div class="header-actions">
+      <button class="ghost-btn" id="role-btn" type="button">Staff</button>
+      <button class="cart-btn" id="cart-toggle" type="button" aria-controls="cart-drawer" aria-expanded="false">
+        Cart <span id="cart-count" class="cart-count">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="top" class="hero">
+      <div class="hero-copy shell">
+        <p class="brand-lockup">Crave It, I Create It</p>
+        <h1>Find the truck.<br /><span>Grab what’s left.</span></h1>
+        <p class="hero-lead">Live map. Live stock. Pickup or nearby drop-off.</p>
+        <div class="hero-cta">
+          <a class="btn btn-gold" href="#map">Open live map</a>
+          <button class="btn btn-ghost" id="hero-order" type="button">Order nearest</button>
+        </div>
+        <p class="hero-live" id="hero-live" aria-live="polite"><span class="pulse"></span> <span id="hero-live-text">Loading fleet…</span></p>
+      </div>
+    </section>
+
+    <section id="map" class="map-section">
+      <div class="shell map-head">
+        <div>
+          <p class="eyebrow">Live fleet</p>
+          <h2>Where the kitchens are now</h2>
+        </div>
+        <button class="chip" id="locate-btn" type="button">Center on me</button>
+      </div>
+      <div class="map-shell">
+        <div id="fleet-map" class="fleet-map" role="region" aria-label="Live truck map"></div>
+        <div id="map-legend" class="map-legend"></div>
+      </div>
+    </section>
+
+    <section id="trucks" class="section">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Trucks</p>
+            <h2>Stock on each vehicle</h2>
+          </div>
+        </div>
+        <div id="vehicle-grid" class="vehicle-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="menu" class="section section-masa">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Menu</p>
+            <h2>Tamales, corn, Concepts</h2>
+          </div>
+          <div class="menu-filters" role="tablist" aria-label="Menu categories">
+            <button class="chip active" data-filter="ALL" type="button">All</button>
+            <button class="chip" data-filter="CLASSIC" type="button">Tamales</button>
+            <button class="chip" data-filter="SIDE" type="button">Corn</button>
+            <button class="chip" data-filter="CONCEPT_LAB" type="button">Lab</button>
+          </div>
+        </div>
+        <div id="product-grid" class="product-grid"></div>
+      </div>
+    </section>
+
+    <section id="concept" class="concept">
+      <div class="shell concept-grid">
+        <div class="concept-copy">
+          <p class="eyebrow gold">Concept Lab</p>
+          <h2>You crave it.<br />We create it.</h2>
+          <p>Any idea. We wrap it in masa.</p>
+          <button class="btn btn-gold" id="open-concept" type="button">Send an idea</button>
+        </div>
+        <div id="concept-stack" class="concept-stack"></div>
+      </div>
+    </section>
+
+    <section id="catering" class="section section-catering">
+      <div class="shell catering-grid">
+        <div>
+          <p class="eyebrow">Catering &amp; events</p>
+          <h2>Bring the kitchen to you</h2>
+          <p>Parties, job sites, family nights. Tell us the headcount — we’ll route a truck or set a catering drop.</p>
+          <a class="btn btn-chile" id="catering-link" href="mailto:catering@craveit.local">Request catering</a>
+        </div>
+        <ul class="catering-list">
+          <li>Tamale trays &amp; street corn bars</li>
+          <li>Custom Concept Lab menus</li>
+          <li>Route stop at your address</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="story" class="story">
+      <div class="shell story-grid">
+        <figure class="story-visual">
+          <img src="assets/family-kitchen.svg" alt="Family kitchen with tamales and street corn" />
+        </figure>
+        <div class="story-copy">
+          <p class="eyebrow">Our story</p>
+          <h2>Family recipe.<br />Moving kitchen.</h2>
+          <p id="story-text">Family recipes ride in the trucks. The masa still starts at home.</p>
+          <blockquote id="story-quote">“You crave it, I create it.”</blockquote>
+        </div>
+      </div>
+    </section>
+
+    <section id="get-app" class="section section-app">
+      <div class="shell app-promo">
+        <div>
+          <p class="eyebrow">Get the app</p>
+          <h2>Add to your phone</h2>
+          <p>Works on iPhone and Android. Install from Safari or Chrome — no app store wait.</p>
+        </div>
+        <ol class="install-steps">
+          <li><strong>iPhone:</strong> Safari → Share → Add to Home Screen</li>
+          <li><strong>Android:</strong> Chrome → Install app / Add to Home screen</li>
+          <li><strong>Staff:</strong> open Driver or Ops after install</li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="track" class="section section-track">
+      <div class="shell track-box">
+        <div>
+          <p class="eyebrow">Track order</p>
+          <h2>Check your reservation</h2>
+        </div>
+        <form id="track-form" class="track-form">
+          <label>Order ID<input id="track-id" required placeholder="ord_********" autocomplete="off" /></label>
+          <label>Phone<input id="track-phone" type="tel" required placeholder="Checkout phone" autocomplete="tel" /></label>
+          <button class="btn btn-chile" type="submit">Look up</button>
+        </form>
+        <div id="track-result" class="track-result" hidden></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-row">
+      <div class="brand">
+        <img src="assets/logo-mark.svg" alt="" width="32" height="32" />
+        <span class="brand-text"><strong>Crave It</strong><small>I Create It</small></span>
+      </div>
+      <p>Las Vegas mobile kitchens · Customer + driver in one install</p>
+      <div class="footer-links">
+        <a href="driver.html">Driver</a>
+        <a href="ops.html">Ops</a>
+        <a href="#get-app">Install</a>
+      </div>
+    </div>
+  </footer>
+
+  <nav class="mobile-dock" aria-label="Mobile">
+    <a href="#map">Map</a>
+    <a href="#menu">Menu</a>
+    <button type="button" id="dock-cart">Cart <span id="dock-cart-count">0</span></button>
+    <a href="driver.html">Drive</a>
+  </nav>
+
+  <aside id="cart-drawer" class="cart-drawer" aria-hidden="true">
+    <div class="cart-panel">
+      <header>
+        <div>
+          <p class="eyebrow">Cart</p>
+          <h2 id="cart-vehicle-label">Pick a truck</h2>
+        </div>
+        <button class="icon-x" id="cart-close" type="button" aria-label="Close">×</button>
+      </header>
+      <p id="cart-lock-note" class="cart-note">One truck per order — keeps stock honest.</p>
+      <div id="cart-lines" class="cart-lines"></div>
+      <div id="cart-empty" class="cart-empty">Add items from a live truck or the menu.</div>
+      <form id="checkout-form" class="checkout" hidden>
+        <label>Fulfillment
+          <select id="fulfillment" required>
+            <option value="PICKUP">Meet the truck</option>
+            <option value="DROP_OFF">Nearby drop-off</option>
+          </select>
+        </label>
+        <label id="address-field" hidden>Drop-off address
+          <input id="delivery-address" autocomplete="street-address" placeholder="Street + landmark" />
+        </label>
+        <div class="two-col">
+          <label>Name<input id="customer-name" autocomplete="name" required /></label>
+          <label>Phone<input id="customer-phone" type="tel" autocomplete="tel" required /></label>
+        </div>
+        <label>Notes<textarea id="order-notes" rows="2" placeholder="Timing, sauce, allergy"></textarea></label>
+        <div class="totals" id="cart-totals"></div>
+        <button class="btn btn-chile full" type="submit">Place order</button>
+        <p id="checkout-status" class="form-status" role="status"></p>
+      </form>
+    </div>
+  </aside>
+
+  <dialog id="role-dialog" class="dialog">
+    <div class="dialog-card">
+      <button class="icon-x dialog-x" type="button" data-close-dialog aria-label="Close">×</button>
+      <p class="eyebrow">Staff sign-in</p>
+      <h2>Who’s opening the app?</h2>
+      <p class="meta">Same install. Different door.</p>
+      <div class="role-grid">
+        <a class="role-card" href="index.html#map"><strong>Customer</strong><span>Map, menu, order</span></a>
+        <a class="role-card" href="driver.html"><strong>Driver</strong><span>Route, orders, GPS, stock</span></a>
+        <a class="role-card" href="ops.html"><strong>Kitchen / Owner</strong><span>Board, assign, advance</span></a>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="concept-dialog" class="dialog">
+    <form method="dialog" class="dialog-card" id="concept-form">
+      <button class="icon-x dialog-x" type="button" data-close-dialog aria-label="Close">×</button>
+      <p class="eyebrow">Concept Lab</p>
+      <h2>What should we wrap next?</h2>
+      <label>Idea<textarea id="concept-idea" rows="4" required></textarea></label>
+      <label>Name<input id="concept-name" required /></label>
+      <label>Contact<input id="concept-contact" required /></label>
+      <button class="btn btn-chile full" type="submit" value="default">Send</button>
+      <p id="concept-status" class="form-status" role="status"></p>
+    </form>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="dialog">
+    <div class="dialog-card">
+      <button class="icon-x dialog-x" type="button" data-close-dialog aria-label="Close">×</button>
+      <p class="eyebrow">Order in</p>
+      <h2 id="confirm-title">You’re on the board</h2>
+      <div id="confirm-body"></div>
+      <button class="btn btn-gold full" type="button" id="confirm-track">Track order</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

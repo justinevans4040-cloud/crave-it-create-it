@@ -1,0 +1,43 @@
+{
+  "name": "Crave It, I Create It",
+  "short_name": "Crave It",
+  "description": "Live truck map, stock, orders — customer and driver in one install.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#140E0C",
+  "theme_color": "#8E1C1C",
+  "categories": ["food", "lifestyle"],
+  "icons": [
+    {
+      "src": "assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/logo-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Live map",
+      "short_name": "Map",
+      "url": "./index.html#map"
+    },
+    {
+      "name": "Driver board",
+      "short_name": "Driver",
+      "url": "./driver.html"
+    },
+    {
+      "name": "Kitchen / Ops",
+      "short_name": "Ops",
+      "url": "./ops.html"
+    }
+  ]
+}

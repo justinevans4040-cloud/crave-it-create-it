@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: crave-it-create-it
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: OPS_ALLOW_REMOTE
+        value: "1"
+      - key: OPS_TOKEN
+        generateValue: true
+      - key: API_HOST
+        value: "0.0.0.0"

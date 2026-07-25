@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Crave It, I Create It",
+    "slug": "crave-it-create-it",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FFF6E8"
+    },
+    "android": {
+      "package": "com.craveitcreateit.customer"
+    },
+    "ios": {
+      "bundleIdentifier": "com.craveitcreateit.customer",
+      "supportsTablet": true
+    }
+  }
+}
