@@ -271,7 +271,12 @@ function renderVehicles() {
       <div class="inventory-list">
         ${rows.length ? rows.map(item => {
           const product = productById(item.productId);
-          return `<div class="inventory-row"><span>${product?.name || item.productId}</span><strong>${item.quantity} left</strong><div class="stock-bar"><i style="width:${Math.min(100, (item.quantity / 30) * 100)}%"></i></div></div>`;
+          return `<button type="button" class="inventory-row tappable" data-add-product="${item.productId}" data-vehicle="${vehicle.id}" ${active ? '' : 'disabled'}>
+            <span>${product?.name || item.productId}</span>
+            <strong>${item.quantity} left</strong>
+            ${active ? '<span class="add-hint">Tap to add</span>' : ''}
+            <div class="stock-bar"><i style="width:${Math.min(100, (item.quantity / 30) * 100)}%"></i></div>
+          </button>`;
         }).join('') : '<div class="inventory-row"><span>Restocking</span><strong>0 ready</strong></div>'}
       </div>
       <div class="vehicle-actions">
@@ -321,6 +326,17 @@ function renderStory() {
   if (email) document.querySelector('#catering-link').href = `mailto:${email}`;
 }
 
+function truckStockRows(vehicleId) {
+  return state.inventory
+    .filter(item => item.vehicleId === vehicleId && item.quantity > 0)
+    .sort((a, b) => b.quantity - a.quantity)
+    .map(item => {
+      const product = productById(item.productId);
+      return { ...item, product };
+    })
+    .filter(item => item.product);
+}
+
 function renderCart() {
   const count = cartCount();
   document.querySelector('#cart-count').textContent = String(count);
@@ -332,14 +348,36 @@ function renderCart() {
     : 'One truck per order — keeps stock honest.';
 
   const linesEl = document.querySelector('#cart-lines');
+  const pickerEl = document.querySelector('#cart-picker');
   const emptyEl = document.querySelector('#cart-empty');
   const form = document.querySelector('#checkout-form');
+
   if (!state.cart.lines.length) {
     linesEl.innerHTML = '';
-    emptyEl.hidden = false;
     form.hidden = true;
+    if (vehicle && vehicle.status === 'ACTIVE') {
+      emptyEl.hidden = true;
+      pickerEl.hidden = false;
+      const stock = truckStockRows(vehicle.id);
+      pickerEl.innerHTML = stock.length
+        ? `<p class="cart-picker-title">Add from this truck</p>${stock.map(item => `
+          <div class="cart-pick">
+            <div>
+              <strong>${item.product.name}</strong>
+              <div class="meta">${money(item.product.priceCents)} · ${item.quantity} left</div>
+            </div>
+            <button class="mini-add" type="button" data-add-product="${item.productId}" data-vehicle="${vehicle.id}" aria-label="Add ${item.product.name}">+</button>
+          </div>`).join('')}`
+        : '<p class="meta">Nothing left on this truck right now.</p>';
+    } else {
+      pickerEl.hidden = true;
+      pickerEl.innerHTML = '';
+      emptyEl.hidden = false;
+      emptyEl.textContent = 'Pick a live truck, then add what’s left on board.';
+    }
     return;
   }
+
   emptyEl.hidden = true;
   form.hidden = false;
   linesEl.innerHTML = state.cart.lines.map(line => {
@@ -357,6 +395,24 @@ function renderCart() {
       </div>
     </div>`;
   }).join('');
+
+  const more = truckStockRows(state.cart.vehicleId).filter(item =>
+    !state.cart.lines.some(line => line.productId === item.productId)
+  );
+  if (more.length) {
+    pickerEl.hidden = false;
+    pickerEl.innerHTML = `<p class="cart-picker-title">Add more</p>${more.map(item => `
+      <div class="cart-pick">
+        <div>
+          <strong>${item.product.name}</strong>
+          <div class="meta">${money(item.product.priceCents)} · ${item.quantity} left</div>
+        </div>
+        <button class="mini-add" type="button" data-add-product="${item.productId}" data-vehicle="${state.cart.vehicleId}" aria-label="Add ${item.product.name}">+</button>
+      </div>`).join('')}`;
+  } else {
+    pickerEl.hidden = true;
+    pickerEl.innerHTML = '';
+  }
 
   const subtotal = cartSubtotal();
   const tax = Math.round((subtotal * (state.settings?.taxRateBps || 825)) / 10000);
@@ -597,7 +653,9 @@ document.addEventListener('click', event => {
   }
 
   const addProductBtn = event.target.closest('[data-add-product]');
-  if (addProductBtn) addProduct(addProductBtn.dataset.addProduct);
+  if (addProductBtn) {
+    addProduct(addProductBtn.dataset.addProduct, addProductBtn.dataset.vehicle || undefined);
+  }
 
   const qtyBtn = event.target.closest('[data-qty]');
   if (qtyBtn) changeQty(qtyBtn.dataset.qty, Number(qtyBtn.dataset.delta));
@@ -652,6 +710,7 @@ document.querySelector('#confirm-track')?.addEventListener('click', () => {
     const phone = document.querySelector('#customer-phone')?.value;
     if (phone) document.querySelector('#track-phone').value = phone;
     document.querySelector('#track').scrollIntoView({ behavior: 'smooth' });
+    if (phone) document.querySelector('#track-form')?.requestSubmit();
   }
 });
 

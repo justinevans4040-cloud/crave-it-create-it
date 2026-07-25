@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
   <title>Crave It, I Create It</title>
 </head>
 <body>
@@ -215,7 +215,8 @@
       </header>
       <p id="cart-lock-note" class="cart-note">One truck per order — keeps stock honest.</p>
       <div id="cart-lines" class="cart-lines"></div>
-      <div id="cart-empty" class="cart-empty">Add items from a live truck or the menu.</div>
+      <div id="cart-picker" class="cart-picker" hidden></div>
+      <div id="cart-empty" class="cart-empty">Pick a live truck, then add what’s left on board.</div>
       <form id="checkout-form" class="checkout" hidden>
         <label>Fulfillment
           <select id="fulfillment" required>
@@ -277,6 +278,6 @@
 
   <div id="toast" class="toast" role="status"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="app.js" type="module"></script>
+  <script src="app.js?v=5" type="module"></script>
 </body>
 </html>

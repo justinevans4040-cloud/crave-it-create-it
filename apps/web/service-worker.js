@@ -1,13 +1,9 @@
-const CACHE = 'crave-shell-v4';
-const ASSETS = [
+const CACHE = 'crave-shell-v5';
+const PRECACHE = [
   './',
   './index.html',
   './driver.html',
   './ops.html',
-  './styles.css',
-  './driver.css',
-  './app.js',
-  './driver.js',
   './manifest.webmanifest',
   './assets/logo-mark.svg',
   './assets/apple-touch-icon.png',
@@ -15,7 +11,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
@@ -29,7 +25,21 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.includes('/api/')) return;
+  if (url.pathname.includes('/api/') || url.pathname.endsWith('/health')) return;
+
+  // Always prefer network for app shell scripts/styles so cart fixes ship immediately
+  const isShell = /\.(js|css|html|webmanifest)$/i.test(url.pathname) || url.pathname.endsWith('/');
+  if (isShell) {
+    event.respondWith(
+      fetch(request).then(response => {
+        const copy = response.clone();
+        caches.open(CACHE).then(cache => cache.put(request, copy));
+        return response;
+      }).catch(() => caches.match(request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then(cached => cached || fetch(request).then(response => {
       const copy = response.clone();
