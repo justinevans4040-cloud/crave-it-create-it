@@ -113,6 +113,15 @@
       "priceCents": 750,
       "dietary": [],
       "image": "assets/concept-crunch.svg"
+    },
+    {
+      "id": "tamal-white-folks",
+      "name": "White Folks",
+      "category": "CONCEPT_LAB",
+      "description": "No seasoning. No sauce.",
+      "priceCents": 450,
+      "dietary": ["VEGETARIAN"],
+      "image": "assets/tamal-green.svg"
     }
   ],
   "inventory": [
@@ -120,10 +129,12 @@
     { "vehicleId": "truck-sunrise", "productId": "tamal-green-chile", "quantity": 19 },
     { "vehicleId": "truck-sunrise", "productId": "street-corn", "quantity": 16 },
     { "vehicleId": "truck-sunrise", "productId": "hot-cheetos-tamal", "quantity": 8 },
+    { "vehicleId": "truck-sunrise", "productId": "tamal-white-folks", "quantity": 12 },
     { "vehicleId": "truck-valley", "productId": "tamal-red-chile", "quantity": 21 },
     { "vehicleId": "truck-valley", "productId": "tamal-green-chile", "quantity": 14 },
     { "vehicleId": "truck-valley", "productId": "street-corn", "quantity": 9 },
     { "vehicleId": "truck-valley", "productId": "fruity-pebbles-tamal", "quantity": 7 },
+    { "vehicleId": "truck-valley", "productId": "tamal-white-folks", "quantity": 10 },
     { "vehicleId": "truck-family", "productId": "tamal-red-chile", "quantity": 0 },
     { "vehicleId": "truck-family", "productId": "captain-crunch-alfredo", "quantity": 0 }
   ],
