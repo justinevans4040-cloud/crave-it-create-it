@@ -11,8 +11,10 @@ const statePath = process.env.VERCEL
 const seedPath = path.resolve(here, '../../data/seed.json');
 const port = Number(process.env.API_PORT || 8788);
 const host = process.env.API_HOST || '127.0.0.1';
-const OPS_TOKEN = process.env.OPS_TOKEN || 'crave-local-ops';
-const OPS_ALLOW_REMOTE = process.env.OPS_ALLOW_REMOTE === '1' || Boolean(process.env.VERCEL);
+const IS_VERCEL = Boolean(process.env.VERCEL);
+const LOCAL_DEMO_OPS_TOKEN = 'crave-local-ops';
+const OPS_TOKEN = process.env.OPS_TOKEN || (IS_VERCEL ? '' : LOCAL_DEMO_OPS_TOKEN);
+const OPS_ALLOW_REMOTE = process.env.OPS_ALLOW_REMOTE === '1' || IS_VERCEL;
 const ALLOWED_ORIGINS = new Set(
   String(process.env.CORS_ORIGINS || 'http://localhost:4173,http://127.0.0.1:4173,*')
     .split(',')
@@ -120,6 +122,13 @@ function isLocalSocket(req) {
 }
 
 function requireOps(req, res) {
+  if (!OPS_TOKEN) {
+    send(res, 503, {
+      error: 'OPS_NOT_CONFIGURED',
+      message: 'Set OPS_TOKEN in the deployment environment before using staff routes.'
+    }, req);
+    return false;
+  }
   const token = req.headers['x-ops-token'];
   if (token && token === OPS_TOKEN) return true;
   send(res, 401, { error: 'OPS_UNAUTHORIZED', message: 'Provide x-ops-token for operator routes.' }, req);
@@ -424,7 +433,7 @@ export async function handleRequest(req, res) {
       const id = url.pathname.split('/')[3];
       const input = await readJson(req).catch(() => ({}));
       const phone = input.phone || url.searchParams.get('phone');
-      const opsOk = req.headers['x-ops-token'] === OPS_TOKEN;
+      const opsOk = Boolean(OPS_TOKEN) && req.headers['x-ops-token'] === OPS_TOKEN;
       if (!opsOk && digits(phone).length < 7) {
         return send(res, 400, { error: 'PHONE_OR_OPS_REQUIRED' }, req);
       }
@@ -600,6 +609,31 @@ export async function handleRequest(req, res) {
       const seed = normalizeState(JSON.parse(await readFile(seedPath, 'utf8')));
       await persist(seed);
       return send(res, 200, { ok: true, message: 'Demo state reset from seed.' }, req);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/payments/status') {
+      const configured = Boolean(process.env.STRIPE_SECRET_KEY);
+      return send(res, 200, {
+        provider: 'stripe',
+        configured,
+        mode: configured ? 'checkout_ready' : 'unconfigured',
+        message: configured
+          ? 'Stripe secret is present. Wire Checkout Sessions for paid orders.'
+          : 'Add STRIPE_SECRET_KEY (owner account) to enable food checkout paywall.'
+      }, req);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/checkout/session') {
+      if (!process.env.STRIPE_SECRET_KEY) {
+        return send(res, 503, {
+          error: 'PAYMENTS_NOT_CONFIGURED',
+          message: 'Stripe is not configured yet. Orders still work in demo/reservation mode.'
+        }, req);
+      }
+      return send(res, 501, {
+        error: 'CHECKOUT_NOT_WIRED',
+        message: 'Stripe key present. Checkout Session creation lands after owner confirms Stripe account.'
+      }, req);
     }
 
     return send(res, 404, { error: 'NOT_FOUND' }, req);

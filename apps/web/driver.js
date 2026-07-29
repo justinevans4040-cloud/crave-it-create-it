@@ -3,9 +3,11 @@ const API_URL = globalThis.CRAVE_API_URL || (
 );
 const TOKEN_KEY = 'crave.opsToken';
 const VEHICLE_KEY = 'crave.driverVehicle';
+const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
+const DEMO_OPS_TOKEN = 'crave-local-ops';
 
 const state = {
-  token: localStorage.getItem(TOKEN_KEY) || 'crave-local-ops',
+  token: localStorage.getItem(TOKEN_KEY) || (IS_LOCAL ? DEMO_OPS_TOKEN : ''),
   vehicleId: localStorage.getItem(VEHICLE_KEY) || '',
   board: null,
   map: null,
@@ -148,7 +150,12 @@ async function enterDriver() {
   const status = document.querySelector('#gate-status');
   status.className = 'form-status';
   status.textContent = 'Checking staff access…';
-  state.token = document.querySelector('#ops-token').value.trim() || 'crave-local-ops';
+  state.token = document.querySelector('#ops-token').value.trim() || (IS_LOCAL ? DEMO_OPS_TOKEN : '');
+  if (!state.token) {
+    status.className = 'form-status error';
+    status.textContent = 'Enter the staff code.';
+    return;
+  }
   state.vehicleId = document.querySelector('#vehicle-select').value;
   localStorage.setItem(TOKEN_KEY, state.token);
   localStorage.setItem(VEHICLE_KEY, state.vehicleId);

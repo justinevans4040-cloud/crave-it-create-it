@@ -37,7 +37,18 @@
   </header>
 
   <main class="shell ops-wrap">
-    <p class="eyebrow">Demo ops · no login required locally</p>
+    <section id="ops-gate" class="ops-card" style="max-width:420px;margin:0 auto 18px;">
+      <p class="eyebrow">Staff door</p>
+      <h3 style="margin:0;">Operator code</h3>
+      <p class="tiny">Production requires the OPS_TOKEN from the owner. Local demo can use the default code.</p>
+      <label class="tiny" style="display:grid;gap:6px;">Staff code
+        <input id="ops-token-input" type="password" autocomplete="current-password" placeholder="Staff code" style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;" />
+      </label>
+      <button class="btn btn-chile" id="ops-enter" type="button">Unlock ops</button>
+      <p id="ops-gate-status" class="form-status" role="status"></p>
+    </section>
+    <div id="ops-board" hidden>
+    <p class="eyebrow" id="ops-mode-label">Operator board</p>
     <h1 style="font-family:var(--display);letter-spacing:-0.04em;margin:0 0 18px;font-size:clamp(2rem,5vw,3rem);">Route · stock · orders</h1>
     <div class="ops-grid">
       <section class="ops-card">
@@ -65,13 +76,16 @@
         <div id="concepts"></div>
       </section>
     </div>
+    </div>
   </main>
 
   <div id="toast" class="toast" role="status"></div>
   <script type="module">
     const API = (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://127.0.0.1:8788' : '');
-    const OPS_TOKEN = localStorage.getItem('crave.opsToken') || 'crave-local-ops';
-    const opsHeaders = { 'content-type': 'application/json', 'x-ops-token': OPS_TOKEN };
+    const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
+    const DEMO_OPS_TOKEN = 'crave-local-ops';
+    let OPS_TOKEN = localStorage.getItem('crave.opsToken') || (IS_LOCAL ? DEMO_OPS_TOKEN : '');
+    const opsHeaders = () => ({ 'content-type': 'application/json', 'x-ops-token': OPS_TOKEN });
     const toast = (msg) => {
       const el = document.querySelector('#toast');
       el.textContent = msg; el.classList.add('show');
@@ -79,12 +93,49 @@
     };
 
     let board = null;
+    const gate = document.querySelector('#ops-gate');
+    const boardEl = document.querySelector('#ops-board');
+    const tokenInput = document.querySelector('#ops-token-input');
+    if (OPS_TOKEN) tokenInput.value = OPS_TOKEN;
+
+    function showBoard() {
+      gate.hidden = true;
+      boardEl.hidden = false;
+      document.querySelector('#ops-mode-label').textContent = IS_LOCAL
+        ? 'Local demo ops'
+        : 'Staff ops · token required';
+    }
 
     async function load() {
+      if (!OPS_TOKEN) throw new Error('Enter the staff code.');
       const res = await fetch(`${API}/api/ops/board`, { headers: { 'x-ops-token': OPS_TOKEN } });
-      if (!res.ok) throw new Error('Ops unauthorized — set localStorage crave.opsToken');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || 'Ops unauthorized — wrong staff code.');
+      }
       board = await res.json();
+      showBoard();
       render();
+    }
+
+    async function unlockOps() {
+      const status = document.querySelector('#ops-gate-status');
+      OPS_TOKEN = tokenInput.value.trim() || (IS_LOCAL ? DEMO_OPS_TOKEN : '');
+      if (!OPS_TOKEN) {
+        status.className = 'form-status error';
+        status.textContent = 'Enter the staff code.';
+        return;
+      }
+      localStorage.setItem('crave.opsToken', OPS_TOKEN);
+      status.className = 'form-status';
+      status.textContent = 'Checking…';
+      try {
+        await load();
+        status.textContent = '';
+      } catch (err) {
+        status.className = 'form-status error';
+        status.textContent = err.message;
+      }
     }
 
     function render() {
@@ -113,8 +164,6 @@
           </tr>`).join('')}</tbody></table>` : '<p class="tiny">No orders yet.</p>';
 
       document.querySelector('#from-vehicle').innerHTML = board.vehicles.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
-      const products = [...new Set(board.vehicles.flatMap(v => v.stock.map(s => s.productId)))];
-      // fallback product list from stock names
       const productOptions = [];
       for (const v of board.vehicles) for (const s of v.stock) {
         if (!productOptions.find(p => p.id === s.productId)) productOptions.push({ id: s.productId, name: s.productName });
@@ -136,7 +185,7 @@
       const statusBtn = event.target.closest('[data-status]');
       if (statusBtn) {
         await fetch(`${API}/api/ops/vehicles/${statusBtn.dataset.status}`, {
-          method: 'PATCH', headers: opsHeaders,
+          method: 'PATCH', headers: opsHeaders(),
           body: JSON.stringify({ status: statusBtn.dataset.value })
         });
         toast('Vehicle updated'); await load();
@@ -147,7 +196,7 @@
         const idx = FLOW.indexOf(order.status);
         const next = FLOW[Math.min(FLOW.length - 1, idx + 1)];
         await fetch(`${API}/api/ops/orders/${order.id}`, {
-          method: 'PATCH', headers: opsHeaders,
+          method: 'PATCH', headers: opsHeaders(),
           body: JSON.stringify({ status: next })
         });
         toast(`Order → ${next}`); await load();
@@ -156,7 +205,7 @@
 
     document.querySelector('#assign').addEventListener('click', async () => {
       await fetch(`${API}/api/ops/inventory/adjust`, {
-        method: 'POST', headers: opsHeaders,
+        method: 'POST', headers: opsHeaders(),
         body: JSON.stringify({
           type: 'ASSIGN',
           vehicleId: document.querySelector('#from-vehicle').value,
@@ -169,7 +218,7 @@
 
     document.querySelector('#soldout').addEventListener('click', async () => {
       await fetch(`${API}/api/ops/inventory/adjust`, {
-        method: 'POST', headers: opsHeaders,
+        method: 'POST', headers: opsHeaders(),
         body: JSON.stringify({
           type: 'SOLD_OUT',
           vehicleId: document.querySelector('#from-vehicle').value,
@@ -179,14 +228,24 @@
       toast('Marked sold out'); await load();
     });
 
-    document.querySelector('#refresh').addEventListener('click', load);
+    document.querySelector('#ops-enter').addEventListener('click', unlockOps);
+    document.querySelector('#refresh').addEventListener('click', () => load().catch(err => toast(err.message)));
     document.querySelector('#reset').addEventListener('click', async () => {
       await fetch(`${API}/api/ops/reset-demo`, { method: 'POST', headers: { 'x-ops-token': OPS_TOKEN } });
       toast('Demo reset'); await load();
     });
 
-    load().catch((err) => toast(err.message || 'Start npm run dev first'));
-    setInterval(() => load().catch(() => {}), 10000);
+    if (OPS_TOKEN) {
+      load().catch((err) => {
+        gate.hidden = false;
+        boardEl.hidden = true;
+        document.querySelector('#ops-gate-status').className = 'form-status error';
+        document.querySelector('#ops-gate-status').textContent = err.message;
+      });
+      setInterval(() => {
+        if (!boardEl.hidden) load().catch(() => {});
+      }, 10000);
+    }
   </script>
 </body>
 </html>
