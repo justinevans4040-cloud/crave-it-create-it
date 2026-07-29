@@ -12,7 +12,7 @@ const seedPath = path.resolve(here, '../../data/seed.json');
 const port = Number(process.env.API_PORT || 8788);
 const host = process.env.API_HOST || '127.0.0.1';
 const IS_VERCEL = Boolean(process.env.VERCEL);
-const LOCAL_DEMO_OPS_TOKEN = 'crave-local-ops';
+const LOCAL_DEMO_OPS_TOKEN = '12345';
 const OPS_TOKEN = process.env.OPS_TOKEN || (IS_VERCEL ? '' : LOCAL_DEMO_OPS_TOKEN);
 const OPS_ALLOW_REMOTE = process.env.OPS_ALLOW_REMOTE === '1' || IS_VERCEL;
 const ALLOWED_ORIGINS = new Set(
@@ -44,6 +44,9 @@ function normalizeState(state) {
     orders: state.orders || [],
     concepts: state.concepts || [],
     movements: state.movements || [],
+    shifts: state.shifts || [],
+    staffMessages: state.staffMessages || [],
+    contacts: state.contacts || [],
     settings: state.settings || {
       taxRateBps: 825,
       serviceFeeCents: 75,
@@ -501,6 +504,38 @@ export async function handleRequest(req, res) {
       return send(res, result.status, result.body, req);
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/contact') {
+      if (!rateLimit(`contact:${clientKey}`, 8, 60_000)) {
+        return send(res, 429, { error: 'RATE_LIMITED' }, req);
+      }
+      const input = await readJson(req);
+      const name = String(input.name || '').trim();
+      const phone = String(input.phone || input.contact || '').trim();
+      const message = String(input.message || '').trim();
+      if (name.length < 2 || phone.length < 7 || message.length < 5) {
+        return send(res, 422, {
+          error: 'CONTACT_VALIDATION_FAILED',
+          details: ['Name, phone, and a short message are required.']
+        }, req);
+      }
+      const result = await mutate(async () => {
+        const latest = await loadState();
+        const contact = {
+          id: `contact_${randomUUID().slice(0, 8)}`,
+          name,
+          phone,
+          message: message.slice(0, 800),
+          status: 'NEW',
+          createdAt: new Date().toISOString()
+        };
+        latest.contacts.unshift(contact);
+        latest.contacts = latest.contacts.slice(0, 100);
+        await persist(latest);
+        return { status: 201, body: { ok: true, id: contact.id } };
+      });
+      return send(res, result.status, result.body, req);
+    }
+
     if (url.pathname.startsWith('/api/ops/')) {
       if (!requireOps(req, res)) return;
       if (!isLocalSocket(req) && !OPS_ALLOW_REMOTE) {
@@ -510,6 +545,7 @@ export async function handleRequest(req, res) {
 
     if (req.method === 'GET' && url.pathname === '/api/ops/board') {
       const state = await loadState();
+      const activeShifts = state.shifts.filter(shift => shift.status === 'CLOCKED_IN');
       return send(res, 200, {
         vehicles: state.vehicles.map(vehicle => publicVehicle(vehicle, state.inventory, state.products, null, { exact: true })),
         orders: state.orders.slice(0, 40).map(order => redactOrder(order, state, { includePii: true })),
@@ -517,7 +553,10 @@ export async function handleRequest(req, res) {
         products: state.products,
         inventory: state.inventory,
         movements: state.movements.slice(0, 40),
-        lowStock: state.inventory.filter(item => item.quantity > 0 && item.quantity <= 5)
+        lowStock: state.inventory.filter(item => item.quantity > 0 && item.quantity <= 5),
+        shifts: activeShifts,
+        staffMessages: state.staffMessages.slice(0, 40),
+        contacts: state.contacts.slice(0, 30)
       }, req);
     }
 
@@ -601,6 +640,83 @@ export async function handleRequest(req, res) {
         order.updatedAt = new Date().toISOString();
         await persist(latest);
         return { status: 200, body: { order: redactOrder(order, latest, { includePii: true }) } };
+      });
+      return send(res, result.status, result.body, req);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/ops/clock') {
+      const input = await readJson(req);
+      const action = String(input.action || '').toUpperCase();
+      const name = String(input.name || '').trim();
+      const vehicleId = String(input.vehicleId || '').trim();
+      if (!['IN', 'OUT'].includes(action)) {
+        return send(res, 422, { error: 'INVALID_CLOCK_ACTION' }, req);
+      }
+      if (name.length < 2) {
+        return send(res, 422, { error: 'NAME_REQUIRED', message: 'Enter your name to clock in.' }, req);
+      }
+      const result = await mutate(async () => {
+        const latest = await loadState();
+        if (action === 'IN') {
+          const vehicle = latest.vehicles.find(item => item.id === vehicleId);
+          if (!vehicle) return { status: 404, body: { error: 'VEHICLE_NOT_FOUND' } };
+          for (const shift of latest.shifts) {
+            if (shift.status === 'CLOCKED_IN' && shift.name.toLowerCase() === name.toLowerCase()) {
+              shift.status = 'CLOCKED_OUT';
+              shift.clockOutAt = new Date().toISOString();
+            }
+          }
+          const shift = {
+            id: `shift_${randomUUID().slice(0, 8)}`,
+            name,
+            vehicleId,
+            vehicleName: vehicle.name,
+            status: 'CLOCKED_IN',
+            clockInAt: new Date().toISOString(),
+            clockOutAt: null
+          };
+          latest.shifts.unshift(shift);
+          await persist(latest);
+          return { status: 200, body: { shift, shifts: latest.shifts.filter(item => item.status === 'CLOCKED_IN') } };
+        }
+        const open = latest.shifts.find(
+          shift => shift.status === 'CLOCKED_IN'
+            && shift.name.toLowerCase() === name.toLowerCase()
+            && (!vehicleId || shift.vehicleId === vehicleId)
+        );
+        if (!open) return { status: 404, body: { error: 'NO_OPEN_SHIFT', message: 'No open clock-in found for that name.' } };
+        open.status = 'CLOCKED_OUT';
+        open.clockOutAt = new Date().toISOString();
+        await persist(latest);
+        return { status: 200, body: { shift: open, shifts: latest.shifts.filter(item => item.status === 'CLOCKED_IN') } };
+      });
+      return send(res, result.status, result.body, req);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/ops/messages') {
+      const input = await readJson(req);
+      const name = String(input.name || '').trim();
+      const body = String(input.body || '').trim();
+      const role = String(input.role || 'staff').trim().slice(0, 24);
+      if (name.length < 2 || body.length < 1) {
+        return send(res, 422, { error: 'MESSAGE_REQUIRED', message: 'Name and message are required.' }, req);
+      }
+      if (body.length > 500) {
+        return send(res, 422, { error: 'MESSAGE_TOO_LONG' }, req);
+      }
+      const result = await mutate(async () => {
+        const latest = await loadState();
+        const message = {
+          id: `msg_${randomUUID().slice(0, 8)}`,
+          name,
+          role,
+          body,
+          createdAt: new Date().toISOString()
+        };
+        latest.staffMessages.unshift(message);
+        latest.staffMessages = latest.staffMessages.slice(0, 100);
+        await persist(latest);
+        return { status: 201, body: { message, staffMessages: latest.staffMessages.slice(0, 40) } };
       });
       return send(res, result.status, result.body, req);
     }

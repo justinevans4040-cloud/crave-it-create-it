@@ -137,6 +137,23 @@
       </div>
     </section>
 
+    <section id="contact" class="section">
+      <div class="shell" style="display:grid;gap:14px;max-width:560px;">
+        <div>
+          <p class="eyebrow">Contact us</p>
+          <h2>Questions, catering, or just say hey</h2>
+          <p class="meta">Goes straight to the owner board — not public.</p>
+        </div>
+        <form id="contact-form" class="checkout">
+          <label>Name<input id="contact-name" name="name" required autocomplete="name" /></label>
+          <label>Phone<input id="contact-phone" name="phone" type="tel" required autocomplete="tel" /></label>
+          <label>Message<textarea id="contact-message" name="message" rows="3" required placeholder="How can we help?"></textarea></label>
+          <button class="btn btn-chile" type="submit">Send message</button>
+          <p id="contact-status" class="form-status" role="status"></p>
+        </form>
+      </div>
+    </section>
+
     <section id="story" class="story">
       <div class="shell story-grid">
         <figure class="story-visual">
@@ -248,7 +265,7 @@
       <div class="role-grid">
         <a class="role-card" href="index.html#map"><strong>Customer</strong><span>Map, menu, order</span></a>
         <a class="role-card" href="driver.html"><strong>Driver</strong><span>Route, orders, GPS, stock</span></a>
-        <a class="role-card" href="ops.html"><strong>Kitchen / Owner</strong><span>Board, assign, advance</span></a>
+        <a class="role-card" href="ops.html"><strong>Owner</strong><span>Password · crew · stock · orders</span></a>
       </div>
     </div>
   </dialog>

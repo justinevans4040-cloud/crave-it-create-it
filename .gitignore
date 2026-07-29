@@ -11,5 +11,3 @@ data/runtime.json
 .vscode/
 .vercel/
 *.tmp
-
-.vercel

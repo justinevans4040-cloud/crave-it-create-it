@@ -7,8 +7,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
-  <title>Ops · Crave It, I Create It</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Owner · Crave It, I Create It</title>
+  <link rel="stylesheet" href="styles.css?v=6" />
   <style>
     body { padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
     .ops-wrap { padding: 18px 0 60px; }
@@ -20,6 +20,10 @@
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
     .site-header { margin-bottom: 8px; }
+    .ops-card label { display: grid; gap: 6px; font-size: 0.75rem; font-weight: 800; }
+    .ops-card input, .ops-card textarea {
+      border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font: inherit;
+    }
     @media (min-width: 900px) { .ops-grid { grid-template-columns: 1.1fr 0.9fr; } }
   </style>
 </head>
@@ -27,7 +31,7 @@
   <header class="site-header">
     <a class="brand" href="index.html">
       <img src="assets/logo-mark.svg" alt="" width="40" height="40" />
-      <span class="brand-text"><strong>Crave It</strong><small>Operator board</small></span>
+      <span class="brand-text"><strong>Crave It</strong><small>Owner board</small></span>
     </a>
     <div class="header-actions">
       <a class="ghost-btn" href="driver.html">Driver</a>
@@ -38,44 +42,64 @@
 
   <main class="shell ops-wrap">
     <section id="ops-gate" class="ops-card" style="max-width:420px;margin:0 auto 18px;">
-      <p class="eyebrow">Staff door</p>
-      <h3 style="margin:0;">Operator code</h3>
-      <p class="tiny">Production requires the OPS_TOKEN from the owner. Local demo can use the default code.</p>
-      <label class="tiny" style="display:grid;gap:6px;">Staff code
-        <input id="ops-token-input" type="password" autocomplete="current-password" placeholder="Staff code" style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;" />
+      <p class="eyebrow">Owner door</p>
+      <h3 style="margin:0;">Password required</h3>
+      <p class="tiny">Keeps customers out of routes, stock, and crew tools.</p>
+      <label>Password
+        <input id="ops-token-input" type="password" autocomplete="current-password" placeholder="Password" />
       </label>
-      <button class="btn btn-chile" id="ops-enter" type="button">Unlock ops</button>
+      <button class="btn btn-chile" id="ops-enter" type="button">Unlock owner board</button>
       <p id="ops-gate-status" class="form-status" role="status"></p>
     </section>
+
     <div id="ops-board" hidden>
-    <p class="eyebrow" id="ops-mode-label">Operator board</p>
-    <h1 style="font-family:var(--display);letter-spacing:-0.04em;margin:0 0 18px;font-size:clamp(2rem,5vw,3rem);">Route · stock · orders</h1>
-    <div class="ops-grid">
-      <section class="ops-card">
-        <h3>Vehicles</h3>
-        <div id="vehicles"></div>
-      </section>
-      <section class="ops-card">
-        <h3>Open orders</h3>
-        <div id="orders"></div>
-      </section>
-      <section class="ops-card">
-        <h3>Kitchen stock moves</h3>
-        <div class="row">
-          <select id="from-vehicle"></select>
-          <select id="product"></select>
-          <input id="qty" type="number" min="1" value="5" style="width:72px;border:1px solid var(--line);border-radius:12px;padding:8px;" />
-          <button class="btn btn-chile" id="assign" type="button">Assign +</button>
-          <button class="btn btn-gold" id="soldout" type="button">Sold out</button>
-        </div>
-        <p class="tiny">Assign adds stock to a truck. Sold out zeroes that product on the truck.</p>
-        <div id="low"></div>
-      </section>
-      <section class="ops-card">
-        <h3>Concept Lab inbox</h3>
-        <div id="concepts"></div>
-      </section>
-    </div>
+      <p class="eyebrow" id="ops-mode-label">Owner board</p>
+      <h1 style="font-family:var(--display);letter-spacing:-0.04em;margin:0 0 18px;font-size:clamp(2rem,5vw,3rem);">Crew · route · stock</h1>
+      <div class="ops-grid">
+        <section class="ops-card">
+          <h3>Clocked in now</h3>
+          <div id="shifts"></div>
+        </section>
+        <section class="ops-card">
+          <h3>Team messages</h3>
+          <div id="team-messages"></div>
+          <label>Your name
+            <input id="owner-name" placeholder="Owner / kitchen" />
+          </label>
+          <label>Message drivers
+            <textarea id="owner-message" rows="3" placeholder="Need Valley back for restock by 6…"></textarea>
+          </label>
+          <button class="btn btn-chile" id="send-owner-message" type="button">Send to crew</button>
+        </section>
+        <section class="ops-card">
+          <h3>Vehicles</h3>
+          <div id="vehicles"></div>
+        </section>
+        <section class="ops-card">
+          <h3>Open orders</h3>
+          <div id="orders"></div>
+        </section>
+        <section class="ops-card">
+          <h3>Kitchen stock moves</h3>
+          <div class="row">
+            <select id="from-vehicle"></select>
+            <select id="product"></select>
+            <input id="qty" type="number" min="1" value="5" style="width:72px;" />
+            <button class="btn btn-chile" id="assign" type="button">Assign +</button>
+            <button class="btn btn-gold" id="soldout" type="button">Sold out</button>
+          </div>
+          <p class="tiny">Assign adds stock to a truck. Sold out zeroes that product on the truck.</p>
+          <div id="low"></div>
+        </section>
+        <section class="ops-card">
+          <h3>Concept Lab inbox</h3>
+          <div id="concepts"></div>
+        </section>
+        <section class="ops-card">
+          <h3>Contact us inbox</h3>
+          <div id="contacts"></div>
+        </section>
+      </div>
     </div>
   </main>
 
@@ -83,8 +107,8 @@
   <script type="module">
     const API = (['localhost', '127.0.0.1'].includes(location.hostname) ? 'http://127.0.0.1:8788' : '');
     const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
-    const DEMO_OPS_TOKEN = 'crave-local-ops';
-    let OPS_TOKEN = localStorage.getItem('crave.opsToken') || (IS_LOCAL ? DEMO_OPS_TOKEN : '');
+    const DEMO_OPS_TOKEN = '12345';
+    let OPS_TOKEN = localStorage.getItem('crave.opsToken') || '';
     const opsHeaders = () => ({ 'content-type': 'application/json', 'x-ops-token': OPS_TOKEN });
     const toast = (msg) => {
       const el = document.querySelector('#toast');
@@ -101,17 +125,14 @@
     function showBoard() {
       gate.hidden = true;
       boardEl.hidden = false;
-      document.querySelector('#ops-mode-label').textContent = IS_LOCAL
-        ? 'Local demo ops'
-        : 'Staff ops · token required';
     }
 
     async function load() {
-      if (!OPS_TOKEN) throw new Error('Enter the staff code.');
+      if (!OPS_TOKEN) throw new Error('Enter the password.');
       const res = await fetch(`${API}/api/ops/board`, { headers: { 'x-ops-token': OPS_TOKEN } });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.message || 'Ops unauthorized — wrong staff code.');
+        throw new Error(body.message || 'Wrong password.');
       }
       board = await res.json();
       showBoard();
@@ -123,7 +144,7 @@
       OPS_TOKEN = tokenInput.value.trim() || (IS_LOCAL ? DEMO_OPS_TOKEN : '');
       if (!OPS_TOKEN) {
         status.className = 'form-status error';
-        status.textContent = 'Enter the staff code.';
+        status.textContent = 'Enter the password.';
         return;
       }
       localStorage.setItem('crave.opsToken', OPS_TOKEN);
@@ -139,6 +160,22 @@
     }
 
     function render() {
+      const shifts = board.shifts || [];
+      document.querySelector('#shifts').innerHTML = shifts.length
+        ? shifts.map(s => `<div style="border-top:1px solid var(--line);padding:8px 0;">
+            <strong>${s.name}</strong>
+            <div class="tiny">${s.vehicleName} · since ${new Date(s.clockInAt).toLocaleTimeString()}</div>
+          </div>`).join('')
+        : '<p class="tiny">Nobody clocked in yet.</p>';
+
+      const messages = board.staffMessages || [];
+      document.querySelector('#team-messages').innerHTML = messages.length
+        ? messages.slice(0, 12).map(m => `<article style="padding:8px 0;border-top:1px solid var(--line);">
+            <strong>${m.name}</strong> <span class="tiny">${m.role || ''} · ${new Date(m.createdAt).toLocaleString()}</span>
+            <p style="margin:4px 0 0;">${m.body}</p>
+          </article>`).join('')
+        : '<p class="tiny">No crew messages yet.</p>';
+
       document.querySelector('#vehicles').innerHTML = board.vehicles.map(v => `
         <article style="border-top:1px solid var(--line);padding:10px 0;">
           <div class="row" style="justify-content:space-between;">
@@ -177,6 +214,15 @@
       document.querySelector('#concepts').innerHTML = board.concepts.length
         ? board.concepts.map(c => `<article style="padding:8px 0;border-top:1px solid var(--line);"><strong>${c.name}</strong><div class="tiny">${c.contact}</div><p>${c.idea}</p></article>`).join('')
         : '<p class="tiny">No concepts yet.</p>';
+
+      const contacts = board.contacts || [];
+      document.querySelector('#contacts').innerHTML = contacts.length
+        ? contacts.map(c => `<article style="padding:8px 0;border-top:1px solid var(--line);">
+            <strong>${c.name}</strong>
+            <div class="tiny">${c.phone} · ${new Date(c.createdAt).toLocaleString()}</div>
+            <p style="margin:4px 0 0;">${c.message}</p>
+          </article>`).join('')
+        : '<p class="tiny">No contact messages yet.</p>';
     }
 
     const FLOW = ['PENDING','ACCEPTED','PREPARING','READY','EN_ROUTE','COMPLETED'];
@@ -228,12 +274,29 @@
       toast('Marked sold out'); await load();
     });
 
+    document.querySelector('#send-owner-message').addEventListener('click', async () => {
+      const name = document.querySelector('#owner-name').value.trim() || 'Owner';
+      const body = document.querySelector('#owner-message').value.trim();
+      if (!body) { toast('Type a message first.'); return; }
+      const res = await fetch(`${API}/api/ops/messages`, {
+        method: 'POST', headers: opsHeaders(),
+        body: JSON.stringify({ name, role: 'owner', body })
+      });
+      if (!res.ok) { toast('Could not send.'); return; }
+      document.querySelector('#owner-message').value = '';
+      localStorage.setItem('crave.ownerName', name);
+      toast('Sent to crew'); await load();
+    });
+
     document.querySelector('#ops-enter').addEventListener('click', unlockOps);
     document.querySelector('#refresh').addEventListener('click', () => load().catch(err => toast(err.message)));
     document.querySelector('#reset').addEventListener('click', async () => {
       await fetch(`${API}/api/ops/reset-demo`, { method: 'POST', headers: { 'x-ops-token': OPS_TOKEN } });
       toast('Demo reset'); await load();
     });
+
+    const savedOwner = localStorage.getItem('crave.ownerName');
+    if (savedOwner) document.querySelector('#owner-name').value = savedOwner;
 
     if (OPS_TOKEN) {
       load().catch((err) => {

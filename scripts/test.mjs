@@ -7,7 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const port = 8799;
 const api = spawn(process.execPath, ['services/api/server.mjs'], {
   cwd: root,
-  env: { ...process.env, API_PORT: String(port), API_HOST: '127.0.0.1', OPS_TOKEN: 'crave-local-ops' },
+  env: { ...process.env, API_PORT: String(port), API_HOST: '127.0.0.1', OPS_TOKEN: '12345' },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 
@@ -31,7 +31,7 @@ async function waitForHealth() {
 async function reset() {
   await fetch(`http://127.0.0.1:${port}/api/ops/reset-demo`, {
     method: 'POST',
-    headers: { 'x-ops-token': 'crave-local-ops' }
+    headers: { 'x-ops-token': '12345' }
   });
 }
 

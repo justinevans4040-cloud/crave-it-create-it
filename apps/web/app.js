@@ -551,6 +551,33 @@ async function submitConcept(event) {
   }
 }
 
+async function submitContact(event) {
+  event.preventDefault();
+  const status = document.querySelector('#contact-status');
+  status.className = 'form-status';
+  status.textContent = 'Sending…';
+  try {
+    const response = await fetch(`${API_URL}/api/contact`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: document.querySelector('#contact-name').value,
+        phone: document.querySelector('#contact-phone').value,
+        message: document.querySelector('#contact-message').value
+      })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.details?.join(' ') || 'Could not send message.');
+    status.className = 'form-status success';
+    status.textContent = 'Sent — the owner will see it on the board.';
+    event.target.reset();
+    showToast('Message sent.');
+  } catch (error) {
+    status.className = 'form-status error';
+    status.textContent = error.message;
+  }
+}
+
 async function trackOrder(event) {
   event.preventDefault();
   const id = document.querySelector('#track-id').value.trim();
@@ -702,6 +729,7 @@ document.querySelector('#fulfillment')?.addEventListener('change', event => {
 document.querySelector('#checkout-form')?.addEventListener('submit', checkout);
 document.querySelector('#open-concept')?.addEventListener('click', () => document.querySelector('#concept-dialog').showModal());
 document.querySelector('#concept-form')?.addEventListener('submit', submitConcept);
+document.querySelector('#contact-form')?.addEventListener('submit', submitContact);
 document.querySelector('#track-form')?.addEventListener('submit', trackOrder);
 document.querySelector('#confirm-track')?.addEventListener('click', () => {
   document.querySelector('#confirm-dialog').close();

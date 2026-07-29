@@ -140,5 +140,8 @@
   ],
   "orders": [],
   "concepts": [],
-  "movements": []
+  "movements": [],
+  "shifts": [],
+  "staffMessages": [],
+  "contacts": []
 }

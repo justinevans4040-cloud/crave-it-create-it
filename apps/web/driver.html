@@ -13,8 +13,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="styles.css?v=4" />
-  <link rel="stylesheet" href="driver.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="driver.css?v=6" />
   <title>Driver · Crave It</title>
 </head>
 <body class="driver-body">
@@ -25,22 +25,25 @@
     </a>
     <div class="header-actions">
       <a class="ghost-btn" href="index.html">Customer</a>
-      <a class="ghost-btn" href="ops.html">Ops</a>
+      <a class="ghost-btn" href="ops.html">Owner</a>
     </div>
   </header>
 
   <main class="shell driver-main">
     <section class="driver-gate" id="driver-gate">
-      <p class="eyebrow">Staff door</p>
-      <h1>Pick your truck</h1>
-      <p class="meta">Same phone install as customers. This side is route, orders, GPS ping, and stock.</p>
-      <label>Staff code
-        <input id="ops-token" type="password" autocomplete="current-password" placeholder="Staff code" />
+      <p class="eyebrow">Driver clock-in</p>
+      <h1>Clock in to your truck</h1>
+      <p class="meta">Password keeps customers out. Enter your name, password, and truck to start your shift.</p>
+      <label>Your name
+        <input id="driver-name" type="text" autocomplete="name" placeholder="First name" />
+      </label>
+      <label>Password
+        <input id="ops-token" type="password" autocomplete="current-password" placeholder="Password" />
       </label>
       <label>Truck
         <select id="vehicle-select"></select>
       </label>
-      <button class="btn btn-chile full" id="enter-driver" type="button">Open driver board</button>
+      <button class="btn btn-chile full" id="enter-driver" type="button">Clock in</button>
       <p id="gate-status" class="form-status" role="status"></p>
     </section>
 
@@ -50,9 +53,11 @@
           <p class="eyebrow" id="driver-zone">Zone</p>
           <h1 id="driver-truck-name">Truck</h1>
           <p class="meta" id="driver-status-line">—</p>
+          <p class="meta" id="clock-status-line">Not clocked in</p>
         </div>
         <div class="driver-top-actions">
           <button class="btn btn-gold" id="ping-gps" type="button">Ping GPS</button>
+          <button class="chip" id="clock-out" type="button">Clock out</button>
           <button class="chip" id="switch-truck" type="button">Switch</button>
         </div>
       </div>
@@ -64,6 +69,7 @@
       <div class="driver-tabs" role="tablist">
         <button class="chip active" data-tab="orders" type="button">Orders</button>
         <button class="chip" data-tab="stock" type="button">Stock</button>
+        <button class="chip" data-tab="team" type="button">Team</button>
         <button class="chip" data-tab="status" type="button">Status</button>
       </div>
 
@@ -73,6 +79,14 @@
 
       <section class="driver-panel" data-panel="stock" hidden>
         <div id="stock-list" class="stock-list"></div>
+      </section>
+
+      <section class="driver-panel" data-panel="team" hidden>
+        <div id="team-messages" class="order-list"></div>
+        <label>Message the crew
+          <textarea id="team-message" rows="3" placeholder="Running 10 min late on Sahara…"></textarea>
+        </label>
+        <button class="btn btn-chile full" id="send-team-message" type="button">Send to team</button>
       </section>
 
       <section class="driver-panel" data-panel="status" hidden>
@@ -92,6 +106,6 @@
 
   <div id="toast" class="toast" role="status"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="driver.js" type="module"></script>
+  <script src="driver.js?v=6" type="module"></script>
 </body>
 </html>

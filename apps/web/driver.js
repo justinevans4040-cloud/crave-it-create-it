@@ -3,13 +3,16 @@ const API_URL = globalThis.CRAVE_API_URL || (
 );
 const TOKEN_KEY = 'crave.opsToken';
 const VEHICLE_KEY = 'crave.driverVehicle';
+const NAME_KEY = 'crave.driverName';
 const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
-const DEMO_OPS_TOKEN = 'crave-local-ops';
+const DEMO_OPS_TOKEN = '12345';
 
 const state = {
-  token: localStorage.getItem(TOKEN_KEY) || (IS_LOCAL ? DEMO_OPS_TOKEN : ''),
+  token: localStorage.getItem(TOKEN_KEY) || '',
   vehicleId: localStorage.getItem(VEHICLE_KEY) || '',
+  name: localStorage.getItem(NAME_KEY) || '',
   board: null,
+  shift: null,
   map: null,
   marker: null
 };
@@ -38,9 +41,12 @@ async function loadBoard() {
   const response = await fetch(`${API_URL}/api/ops/board`, { headers: headers(false) });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.message || 'Staff code rejected or API offline.');
+    throw new Error(body.message || 'Wrong password or API offline.');
   }
   state.board = await response.json();
+  state.shift = (state.board.shifts || []).find(
+    shift => shift.name.toLowerCase() === state.name.toLowerCase() && shift.vehicleId === state.vehicleId
+  ) || null;
 }
 
 function fillVehicleSelect() {
@@ -89,7 +95,6 @@ function renderMap() {
 }
 
 function renderOrders() {
-  const vehicle = currentVehicle();
   const list = document.querySelector('#order-list');
   const orders = (state.board?.orders || []).filter(order => order.vehicleId === state.vehicleId
     && !['CANCELLED', 'COMPLETED', 'DELIVERED'].includes(order.status));
@@ -133,6 +138,23 @@ function renderStock() {
     : '<p class="empty-note">No stock rows yet.</p>';
 }
 
+function renderTeam() {
+  const list = document.querySelector('#team-messages');
+  const messages = state.board?.staffMessages || [];
+  list.innerHTML = messages.length
+    ? messages.map(message => `
+      <article class="order-card">
+        <header>
+          <div>
+            <h3>${message.name}</h3>
+            <p class="meta">${message.role || 'staff'} · ${new Date(message.createdAt).toLocaleString()}</p>
+          </div>
+        </header>
+        <p>${message.body}</p>
+      </article>`).join('')
+    : '<p class="empty-note">No crew messages yet. Send the first one.</p>';
+}
+
 function renderBoard() {
   const vehicle = currentVehicle();
   if (!vehicle) return;
@@ -140,36 +162,77 @@ function renderBoard() {
   document.querySelector('#driver-truck-name').textContent = vehicle.name;
   document.querySelector('#driver-status-line').textContent =
     `${vehicle.status.replace('_', ' ')} · ${vehicle.locationLabel || 'No label'} · ETA ${vehicle.etaMinutes || '—'} min`;
+  document.querySelector('#clock-status-line').textContent = state.shift
+    ? `Clocked in as ${state.shift.name} · since ${new Date(state.shift.clockInAt).toLocaleTimeString()}`
+    : `Signed in as ${state.name} · not clocked in`;
   document.querySelector('#location-label').value = vehicle.locationLabel || '';
   renderMap();
   renderOrders();
   renderStock();
+  renderTeam();
+}
+
+async function clockIn() {
+  const response = await fetch(`${API_URL}/api/ops/clock`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ action: 'IN', name: state.name, vehicleId: state.vehicleId })
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.message || 'Could not clock in.');
+  state.shift = body.shift;
 }
 
 async function enterDriver() {
   const status = document.querySelector('#gate-status');
   status.className = 'form-status';
-  status.textContent = 'Checking staff access…';
+  status.textContent = 'Checking password…';
+  state.name = document.querySelector('#driver-name').value.trim();
   state.token = document.querySelector('#ops-token').value.trim() || (IS_LOCAL ? DEMO_OPS_TOKEN : '');
-  if (!state.token) {
+  state.vehicleId = document.querySelector('#vehicle-select').value;
+  if (state.name.length < 2) {
     status.className = 'form-status error';
-    status.textContent = 'Enter the staff code.';
+    status.textContent = 'Enter your name.';
     return;
   }
-  state.vehicleId = document.querySelector('#vehicle-select').value;
+  if (!state.token) {
+    status.className = 'form-status error';
+    status.textContent = 'Enter the password.';
+    return;
+  }
   localStorage.setItem(TOKEN_KEY, state.token);
   localStorage.setItem(VEHICLE_KEY, state.vehicleId);
+  localStorage.setItem(NAME_KEY, state.name);
   try {
     await loadBoard();
     fillVehicleSelect();
+    await clockIn();
     document.querySelector('#driver-gate').hidden = true;
     document.querySelector('#driver-board').hidden = false;
     renderBoard();
     status.textContent = '';
-    showToast(`Driving ${currentVehicle()?.name || 'truck'}`);
+    showToast(`Clocked in · ${currentVehicle()?.name || 'truck'}`);
   } catch (error) {
     status.className = 'form-status error';
     status.textContent = error.message;
+  }
+}
+
+async function clockOut() {
+  try {
+    const response = await fetch(`${API_URL}/api/ops/clock`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ action: 'OUT', name: state.name, vehicleId: state.vehicleId })
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || 'Could not clock out.');
+    state.shift = null;
+    document.querySelector('#driver-board').hidden = true;
+    document.querySelector('#driver-gate').hidden = false;
+    showToast('Clocked out. See you next route.');
+  } catch (error) {
+    showToast(error.message);
   }
 }
 
@@ -248,11 +311,36 @@ async function advanceOrder(orderId, status) {
   showToast(`Order → ${status}`);
 }
 
+async function sendTeamMessage() {
+  const body = document.querySelector('#team-message').value.trim();
+  if (!body) {
+    showToast('Type a message first.');
+    return;
+  }
+  const response = await fetch(`${API_URL}/api/ops/messages`, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({ name: state.name, role: 'driver', body })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    showToast(result.message || 'Could not send.');
+    return;
+  }
+  document.querySelector('#team-message').value = '';
+  await loadBoard();
+  renderTeam();
+  showToast('Sent to the crew.');
+}
+
 document.querySelector('#ops-token').value = state.token;
+document.querySelector('#driver-name').value = state.name;
 
 document.querySelector('#enter-driver').addEventListener('click', enterDriver);
 document.querySelector('#ping-gps').addEventListener('click', pingGps);
 document.querySelector('#save-label').addEventListener('click', saveLabel);
+document.querySelector('#clock-out').addEventListener('click', clockOut);
+document.querySelector('#send-team-message').addEventListener('click', sendTeamMessage);
 document.querySelector('#switch-truck').addEventListener('click', () => {
   document.querySelector('#driver-board').hidden = true;
   document.querySelector('#driver-gate').hidden = false;
@@ -266,7 +354,9 @@ document.querySelector('.driver-tabs').addEventListener('click', event => {
   document.querySelectorAll('.driver-panel').forEach(panel => {
     panel.hidden = panel.dataset.panel !== tab.dataset.tab;
   });
-  if (tab.dataset.tab !== 'stock') setTimeout(() => state.map?.invalidateSize(), 40);
+  if (tab.dataset.tab === 'orders' || tab.dataset.tab === 'status') {
+    setTimeout(() => state.map?.invalidateSize(), 40);
+  }
 });
 
 document.querySelector('#driver-board').addEventListener('click', event => {
@@ -279,15 +369,13 @@ document.querySelector('#driver-board').addEventListener('click', event => {
 
 (async () => {
   try {
-    await loadBoard();
+    const response = await fetch(`${API_URL}/api/storefront`);
+    if (!response.ok) throw new Error('storefront');
+    const storefront = await response.json();
+    state.board = { vehicles: storefront.vehicles || [], orders: [], staffMessages: [], shifts: [] };
     fillVehicleSelect();
-    if (state.vehicleId && state.board.vehicles.some(v => v.id === state.vehicleId)) {
-      document.querySelector('#driver-gate').hidden = true;
-      document.querySelector('#driver-board').hidden = false;
-      renderBoard();
-    }
   } catch {
-    fillVehicleSelect();
+    document.querySelector('#vehicle-select').innerHTML = '<option value="">Trucks unavailable</option>';
   }
 })();
 
