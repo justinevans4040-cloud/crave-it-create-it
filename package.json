@@ -17,6 +17,9 @@
     "build": "node scripts/check.mjs",
     "mobile": "npm --workspace apps/mobile run start"
   },
+  "dependencies": {
+    "@vercel/analytics": "^1.4.1"
+  },
   "engines": {
     "node": ">=20"
   }
