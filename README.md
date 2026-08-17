@@ -57,3 +57,6 @@ data             Seed inventory
 docs             Product notes
 scripts/prod-server.mjs  Production all-in-one server
 ```
+
+## Repository Operations Template
+This repository follows the standard operating files: STATUS.md, ROADMAP.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, GOVERNANCE.md, and REPO_TEMPLATE.md.
